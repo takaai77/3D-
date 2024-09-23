@@ -3,66 +3,86 @@
 <head>
   <meta charset="UTF-8">
   <title>3Dアバターを表示しよう！</title>
-  <link rel="stylesheet" href="style.css"> <!-- CSSファイルを読み込む -->
+  <style>
+    body { margin: 0; overflow: hidden; }
+    canvas { display: block; }
+  </style>
 </head>
 <body>
   <script type="module">
-   import * as THREE from 'https://unpkg.com/three@0.148.0/build/three.module.js';
-import { GLTFLoader } from 'https://unpkg.com/three@0.148.0/examples/jsm/loaders/GLTFLoader.js';
-import { VRM, VRMUtils } from 'https://unpkg.com/three-vrm@1.0.10/dist/three-vrm.module.js';
+    import * as THREE from 'https://unpkg.com/three@0.153.0/build/three.module.js';
+    import { OrbitControls } from 'https://unpkg.com/three@0.153.0/examples/jsm/controls/OrbitControls.js';
+    import { GLTFLoader } from 'https://unpkg.com/three@0.153.0/examples/jsm/loaders/GLTFLoader.js';
+    import { VRM } from 'https://unpkg.com/@pixiv/three-vrm@1.0.11/build/three-vrm.module.js';
 
-// シーンを作る
-const scene = new THREE.Scene();
+    // シーンを作る
+    const scene = new THREE.Scene();
 
-// カメラを作る
-const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-camera.position.set(0, 1.5, 3);
+    // カメラを作る
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.set(0, 1.5, 3);
 
-// レンダラーを作る
-const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setSize(window.innerWidth, window.innerHeight);
-document.body.appendChild(renderer.domElement);
+    // レンダラーを作る
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
 
-// ライトを追加する
-const light = new THREE.DirectionalLight(0xffffff);
-light.position.set(0, 1, 1).normalize();
-scene.add(light);
+    // コントロールを追加する
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.target.set(0, 1.5, 0);
+    controls.update();
 
-// ウィンドウのサイズが変わったときの処理
-window.addEventListener('resize', () => {
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-});
+    // ライトを追加する
+    const light = new THREE.DirectionalLight(0xffffff);
+    light.position.set(0, 1, 1).normalize();
+    scene.add(light);
 
-// アバターを読み込む
-const loader = new GLTFLoader();
-
-loader.load(
-  './3Dアバター/avatar.vrm',
-  (gltf) => {
-    VRMUtils.removeUnnecessaryJoints(gltf.scene);
-
-    VRM.from(gltf).then((vrm) => {
-      scene.add(vrm.scene);
-      animate();
+    // ウィンドウのサイズが変わったときの処理
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
     });
-  },
-  (progress) => {
-    console.log('読み込み中...', 100.0 * (progress.loaded / progress.total), '%');
-  },
-  (error) => {
-    console.error('エラーが発生しました:', error);
-  }
-);
 
+    // クロックを作成
+    const clock = new THREE.Clock();
 
-// アニメーションループ
-function animate() {
-  requestAnimationFrame(animate);
-  renderer.render(scene, camera);
-}
+    // アバターを読み込む
+    let currentVrm = null;
+    const loader = new GLTFLoader();
 
+    loader.load(
+      './avatar.vrm',
+      (gltf) => {
+        VRM.from(gltf).then((vrm) => {
+          scene.add(vrm.scene);
+          currentVrm = vrm;
+          vrm.scene.rotation.y = Math.PI; // アバターを正面に向ける
+        });
+      },
+      (progress) => {
+        console.log('読み込み中...', 100.0 * (progress.loaded / progress.total), '%');
+      },
+      (error) => {
+        console.error('エラーが発生しました:', error);
+      }
+    );
+
+    // アニメーションループ
+    function animate() {
+      requestAnimationFrame(animate);
+
+      const deltaTime = clock.getDelta();
+
+      // VRMが読み込まれている場合は更新
+      if (currentVrm) {
+        currentVrm.update(deltaTime);
+      }
+
+      renderer.render(scene, camera);
+    }
+
+    animate();
   </script>
 </body>
 </html>
