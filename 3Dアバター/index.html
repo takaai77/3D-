@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>3Dアバターを表示しよう！</title>
+  <style>
+    body { margin: 0; overflow: hidden; }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+  <script type="module">
+   import * as THREE from 'https://unpkg.com/three@0.148.0/build/three.module.js';
+import { GLTFLoader } from 'https://unpkg.com/three@0.148.0/examples/jsm/loaders/GLTFLoader.js';
+import { VRM, VRMUtils } from 'https://unpkg.com/three-vrm@1.0.10/dist/three-vrm.module.js';
+
+// シーンを作る
+const scene = new THREE.Scene();
+
+// カメラを作る
+const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+camera.position.set(0, 1.5, 3);
+
+// レンダラーを作る
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
+
+// ライトを追加する
+const light = new THREE.DirectionalLight(0xffffff);
+light.position.set(0, 1, 1).normalize();
+scene.add(light);
+
+// ウィンドウのサイズが変わったときの処理
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+// アバターを読み込む
+const loader = new GLTFLoader();
+
+loader.load(
+  './avatar.vrm',
+  (gltf) => {
+    VRMUtils.removeUnnecessaryJoints(gltf.scene);
+
+    VRM.from(gltf).then((vrm) => {
+      scene.add(vrm.scene);
+      animate();
+    });
+  },
+  (progress) => {
+    console.log('読み込み中...', 100.0 * (progress.loaded / progress.total), '%');
+  },
+  (error) => {
+    console.error('エラーが発生しました:', error);
+  }
+);
+
+// アニメーションループ
+function animate() {
+  requestAnimationFrame(animate);
+  renderer.render(scene, camera);
+}
+
+  </script>
+</body>
+</html>
