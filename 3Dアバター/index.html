@@ -42,7 +42,7 @@ window.addEventListener('resize', () => {
 const loader = new GLTFLoader();
 
 loader.load(
-  './avatar.vrm',
+  './3Dアバター/avatar.vrm',
   (gltf) => {
     VRMUtils.removeUnnecessaryJoints(gltf.scene);
 
@@ -58,6 +58,7 @@ loader.load(
     console.error('エラーが発生しました:', error);
   }
 );
+
 
 // アニメーションループ
 function animate() {
